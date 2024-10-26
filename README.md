@@ -339,6 +339,96 @@ input_file_path = 'parsed_rules.md'  # Path to your markdown file
 parsed_rules = parse_markdown_rules(input_file_path)
 create_mind_map(parsed_rules)
 ```
+<img width="1821" alt="firewall_mindmap_ex" src="https://github.com/user-attachments/assets/6ae45334-3bfe-4157-8a68-3cfcaacd23dd">
+
+## Dnat Rules Mindmap Python 
+```python
+import re
+import graphviz
+
+# Function to parse the DNAT rules from the markdown file
+def parse_markdown_rules(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+    
+    # Define a regex pattern to extract DNAT rule attributes from the markdown
+    rule_pattern = re.compile(r'rule\s*{(.*?)}', re.DOTALL)
+    rules = rule_pattern.findall(content)
+    
+    parsed_rules = []
+    
+    # Regex patterns to extract specific rule fields
+    field_patterns = {
+        'name': re.compile(r'name\s*=\s*"(.+?)"'),
+        'source_addresses': re.compile(r'source_addresses\s*=\s*\[([^\]]+)\]'),
+        'destination_address': re.compile(r'destination_address\s*=\s*"(.+?)"'),
+        'destination_ports': re.compile(r'destination_ports\s*=\s*\[([^\]]+)\]'),
+        'protocols': re.compile(r'protocols\s*=\s*\[([^\]]+)\]'),
+        'translated_address': re.compile(r'translated_address\s*=\s*"(.+?)"'),
+        'translated_port': re.compile(r'translated_port\s*=\s*(\d+)')
+    }
+    
+    for rule in rules:
+        rule_data = {}
+        for key, pattern in field_patterns.items():
+            match = pattern.search(rule)
+            if match:
+                rule_data[key] = match.group(1).strip()
+                # Clean up arrays
+                if key in ['source_addresses', 'destination_ports', 'protocols']:
+                    rule_data[key] = [addr.strip().strip('"') for addr in rule_data[key].split(',')]
+        parsed_rules.append(rule_data)
+    
+    return parsed_rules
+
+# Function to display the parsed DNAT rules (for debugging or visualization purposes)
+def display_parsed_rules(parsed_rules):
+    for idx, rule in enumerate(parsed_rules):
+        print(f"Rule {idx + 1}:")
+        print(f"  Name: {rule.get('name', 'N/A')}")
+        print(f"  Destination Address: {rule.get('destination_address', 'N/A')}")
+        print(f"  Destination Ports: {', '.join(rule.get('destination_ports', []))}")
+        print(f"  Protocols: {', '.join(rule.get('protocols', []))}")
+        print(f"  Source Addresses: {', '.join(rule.get('source_addresses', []))}")
+        print(f"  Translated Address: {rule.get('translated_address', 'N/A')}")
+        print(f"  Translated Port: {rule.get('translated_port', 'N/A')}")
+        print()
+
+# Function to create a mind map using the Graphviz library
+def create_mind_map(parsed_rules):
+    # Create a new directed graph
+    dot = graphviz.Digraph(comment='DNAT Rules Mind Map')
+    
+    # Iterate over the parsed rules and create nodes/edges
+    for rule in parsed_rules:
+        for src in rule.get('source_addresses', []):
+            dest = rule.get('destination_address', 'N/A')
+            translated_dest = rule.get('translated_address', 'N/A')
+            label = f"Protocol: {', '.join(rule.get('protocols', []))}\nDest Port: {', '.join(rule.get('destination_ports', []))}\nTrans Port: {rule.get('translated_port', 'N/A')}"
+            
+            # Create source and destination nodes
+            dot.node(src, src)  # Source node
+            dot.node(dest, dest)  # Destination node
+            dot.node(translated_dest, translated_dest)  # Translated address node
+            
+            # Create edges
+            dot.edge(src, dest, label=f"Original ({label})")
+            dot.edge(dest, translated_dest, label="Translated")
+    
+    # Save the mind map to a PDF file
+    dot.render('dnat_rules_mindmap_ex', format='pdf')
+    print("Mind map created and saved as 'dnat_rules_mindmap_ex.pdf'")
+
+# Path to your markdown file
+file_path = 'dnatrulex.md'  # Update with your file path
+
+# Parse and display the rules
+parsed_rules = parse_markdown_rules(file_path)
+display_parsed_rules(parsed_rules)
+
+# Create the mind map based on the parsed rules
+create_mind_map(parsed_rules)
+```
 
 Running the Script
 
@@ -349,6 +439,7 @@ Running the Script
 python generate_mindmap.py
 ```
 This will generate a PDF file (firewall_rules_mindmap.pdf) containing the mind map.
+<img width="1643" alt="dnat_mindmap" src="https://github.com/user-attachments/assets/f9e41dd2-410e-4478-bafd-07ec1df30d21">
 
 # Customization
 
